@@ -219,13 +219,30 @@
       "visual": {
         "src": "assets/figures/fig1_scaling.png",
         "caption": "Figure 1: 16K → 100M token 扩展曲线",
-        "zoomRegion": null,
+        "zoomRegion": {
+          "x": 0.5,
+          "y": 0.1,
+          "w": 0.45,
+          "h": 0.5
+        },
         "annotations": [
           {
-            "x": 0.7,
-            "y": 0.3,
+            "x": 0.75,
+            "y": 0.25,
             "text": "MSA < 9% 衰减",
             "color": "#10b981"
+          },
+          {
+            "x": 0.55,
+            "y": 0.55,
+            "text": "其他方案快速衰减",
+            "color": "#ef4444"
+          },
+          {
+            "x": 0.2,
+            "y": 0.35,
+            "text": "16K 起点",
+            "color": "#fbbf24"
           }
         ]
       }
@@ -370,7 +387,32 @@
         "src": "assets/figures/fig2_msa_layer.png",
         "caption": "Figure 2: MSA 注意力层 + Parallel/Global RoPE",
         "zoomRegion": null,
-        "annotations": []
+        "annotations": [
+          {
+            "x": 0.25,
+            "y": 0.3,
+            "text": "文档独立编码",
+            "color": "#3b82f6"
+          },
+          {
+            "x": 0.55,
+            "y": 0.4,
+            "text": "Top-k 路由选择",
+            "color": "#10b981"
+          },
+          {
+            "x": 0.8,
+            "y": 0.3,
+            "text": "Parallel RoPE",
+            "color": "#8b5cf6"
+          },
+          {
+            "x": 0.8,
+            "y": 0.6,
+            "text": "Global RoPE",
+            "color": "#fbbf24"
+          }
+        ]
       }
     },
     {
@@ -629,8 +671,32 @@
       "visual": {
         "src": "assets/figures/fig3_inference.png",
         "caption": "Figure 3: 三阶段推理 + Memory Interleave",
-        "zoomRegion": null,
-        "annotations": []
+        "zoomRegion": {
+          "x": 0.3,
+          "y": 0.15,
+          "w": 0.5,
+          "h": 0.6
+        },
+        "annotations": [
+          {
+            "x": 0.15,
+            "y": 0.35,
+            "text": "① 离线编码",
+            "color": "#3b82f6"
+          },
+          {
+            "x": 0.5,
+            "y": 0.25,
+            "text": "② 在线路由",
+            "color": "#10b981"
+          },
+          {
+            "x": 0.82,
+            "y": 0.3,
+            "text": "③ 稀疏生成",
+            "color": "#fbbf24"
+          }
+        ]
       }
     },
     {
@@ -804,10 +870,16 @@
         "zoomRegion": null,
         "annotations": [
           {
-            "x": 0.8,
+            "x": 0.75,
             "y": 0.2,
-            "text": "MSA: 94.84% @1M",
+            "text": "MSA: 94.84%",
             "color": "#10b981"
+          },
+          {
+            "x": 0.4,
+            "y": 0.65,
+            "text": "Backbone 崩溃: 24.69%",
+            "color": "#ef4444"
           }
         ]
       }
@@ -877,7 +949,20 @@
         "src": "assets/figures/training_time_vs_context_length_updated.png",
         "caption": "训练时间 vs 上下文长度对比",
         "zoomRegion": null,
-        "annotations": []
+        "annotations": [
+          {
+            "x": 0.7,
+            "y": 0.25,
+            "text": "Full Attention O(n²)",
+            "color": "#ef4444"
+          },
+          {
+            "x": 0.7,
+            "y": 0.7,
+            "text": "MSA 近线性",
+            "color": "#3b82f6"
+          }
+        ]
       }
     },
     {

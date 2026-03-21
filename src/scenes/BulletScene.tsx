@@ -136,22 +136,6 @@ export const BulletScene: React.FC<{ visual: BulletVisual }> = ({ visual }) => {
                   }}
                 />
 
-                {/* Active left glow bar */}
-                {isActive && (
-                  <div
-                    style={{
-                      position: "absolute",
-                      left: 95,
-                      top: 0,
-                      width: 3,
-                      height: "100%",
-                      backgroundColor: colors.primary,
-                      borderRadius: 2,
-                      opacity: activeProgress * 0.6,
-                    }}
-                  />
-                )}
-
                 <p
                   style={{
                     fontFamily: fontFamily.sans,
