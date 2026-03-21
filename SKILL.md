@@ -1,7 +1,7 @@
 ---
 name: paper-video
 description: "USE THIS SKILL whenever user wants to create explanation videos from academic papers, or says 论文视频、paper video、论文解说、把论文做成视频。三引擎渲染（Remotion + Motion Canvas + Manim），输入论文 URL/PDF 自动生成 5-10 分钟解说视频，中文语音旁白 + 动画字幕。"
-version: "2.0"
+version: "3.0"
 ---
 
 # Paper-Video — 论文解说视频生成器
@@ -71,14 +71,16 @@ cat .ralphfree/errors.md   # 错误模式（避免重复踩坑）
 
 1. 解析论文（pdfplumber 或 LLM 直接读 PDF）
 2. 生成 `input/{name}_script.json`，为每个段落选择最合适的 scene type：
-   - 概述/要点 → `bullet`
-   - 代码演进 → `code_diff`（Motion Canvas）
-   - 公式推导 → `formula_derive`（Motion Canvas）
-   - 算法步骤 → `algorithm`（Motion Canvas）
-   - 架构流程 → `flowchart`（Motion Canvas）
+   - 概述/要点 → `bullet`（Remotion，逐条高亮）
+   - 公式推导 → `formula`（Remotion KaTeX 渲染，步骤编号 + 逐步高亮）
+   - 代码展示 → `code`（Remotion highlight.js 语法高亮，逐行揭示）
+   - 图片展示 → `figure`（Remotion，标注标签 + zoom 动画）
+   - 对比表格 → `compare`（Remotion，逐行动画 + 当前行高亮）
+   - 代码变形 → `code_diff`（Motion Canvas，v1→v2 平滑过渡）
+   - 动态流程图 → `flowchart`（Motion Canvas，节点逐步出现）
    - 3D 结构 → `arch_3d`（Manim）
-   - 图片展示 → `figure`
-   - 对比表格 → `compare`
+
+   **选择原则**：优先用 Remotion 场景（渲染快 ~14s/场景），MC 场景渲染慢（冷启动 >60s），只在需要代码变形/动态流程图等 Remotion 做不到的效果时才用。
 
 ### Step 3-4: TTS + 充实
 
@@ -106,21 +108,28 @@ bash .ralphfree/verify.sh output/{name}.mp4
 
 ## 三引擎 Scene Type 速查
 
-| Type | 引擎 | 用途 | Visual 字段 |
-|------|------|------|------------|
-| `title` | Remotion | 标题页 | title, subtitle, authors |
-| `bullet` | Remotion | 要点列表 | heading, points |
-| `figure` | Remotion | 图片展示 | src, caption, zoomRegion |
-| `code` | Remotion | 静态代码 | language, code, highlightLines |
-| `formula` | Remotion | 单公式展示 | steps, labels |
-| `compare` | Remotion | 对比表格 | headers, rows, highlightRow |
-| `summary` | Remotion | 总结页 | keyNumbers, takeaway |
-| `code_diff` | MC | 代码变形 | codeV1, codeV2, language |
-| `formula_derive` | MC | 公式推导 | steps[{latex,label}], direction |
-| `algorithm` | MC | 算法步骤 | title, pseudocode, highlightSteps |
-| `flowchart` | MC | 动态流程图 | nodes, edges, revealOrder |
-| `arch_3d` | Manim | 3D 架构 | layers, connections, cameraAngle |
-| `math_3d` | Manim | 3D 数学 | (待定) |
+| Type | 引擎 | 用途 | 视觉效果 |
+|------|------|------|---------|
+| `title` | Remotion | 标题页 | 粒子漂浮 + 渐变光线 + 文字发光入场 |
+| `bullet` | Remotion | 要点列表 | 逐条淡入 + 当前行高亮/发光 + 已讲完变灰 |
+| `figure` | Remotion | 图片展示 | 标注标签 + zoom 放大缩回 + 扫描聚光灯 |
+| `code` | Remotion | 代码展示 | highlight.js 语法高亮 + macOS 窗口 + 逐行揭示 + 当前行高亮 |
+| `formula` | Remotion | 公式推导 | KaTeX LaTeX 渲染 + 步骤编号 + 逐步高亮 + 标签 |
+| `compare` | Remotion | 对比表格 | 逐行淡入 + 当前行左侧彩色边框 + 高亮行 |
+| `summary` | Remotion | 总结页 | 关键数字弹性入场 + 金色高亮 |
+| `code_diff` | MC | 代码变形 | v1→v2 平滑 morphing 动画 |
+| `formula_derive` | MC/Remotion | 公式推导 | 同 formula（MC 冷启动慢时 fallback 到 Remotion） |
+| `algorithm` | MC | 算法步骤 | 伪代码逐行高亮执行 |
+| `flowchart` | MC | 动态流程图 | 节点 + 箭头逐步出现 |
+| `arch_3d` | Manim | 3D 架构 | 3D 棱柱层 + 旋转摄像机 + 连线动画 |
+| `math_3d` | Manim | 3D 数学 | 3D 曲面/向量场可视化 |
+
+### 所有场景共享的视觉增强
+
+- **动态背景**：流动渐变光斑 + 网格纹理 + 暗角 + 顶部光线，每种场景类型不同色调
+- **场景转场**：淡入淡出过渡（12 帧）
+- **进度条**：底部渐变彩色条 + 右上角场景计数
+- **字幕**：底部居中半透明条 + 逐字高亮进度 + 大字体
 
 ## 状态管理（内化 RalphFree）
 
@@ -154,7 +163,19 @@ paper-video/
 │   ├── engine-router.mjs          ← 引擎路由
 │   └── generate_audio.py          ← TTS 语音生成
 │
-├── src/                           ← Remotion 场景组件
+├── src/                           ← Remotion 场景组件 (7个)
+│   ├── scenes/
+│   │   ├── TitleScene.tsx         ← 粒子 + 发光入场
+│   │   ├── BulletScene.tsx        ← 逐条高亮
+│   │   ├── FigureScene.tsx        ← 标注 + zoom
+│   │   ├── CodeScene.tsx          ← highlight.js 语法高亮
+│   │   ├── FormulaScene.tsx       ← KaTeX LaTeX 渲染
+│   │   ├── CompareScene.tsx       ← 逐行动画
+│   │   └── SummaryScene.tsx       ← 关键数字弹入
+│   ├── components/
+│   │   ├── Background.tsx         ← 动态背景（流动光斑 + 网格）
+│   │   ├── AnimatedCaption.tsx    ← 逐字高亮字幕
+│   │   └── ProgressBar.tsx        ← 渐变进度条 + 场景计数
 ├── motion-canvas-scenes/          ← MC 场景
 │   ├── src/scenes/*.tsx
 │   └── scripts/render-mc.mjs

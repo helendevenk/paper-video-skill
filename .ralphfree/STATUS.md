@@ -6,6 +6,7 @@
 
 | # | 论文 | 输出 | 场景数 | 时长 | 日期 | 备注 |
 |---|------|------|--------|------|------|------|
+| 5 | MSA v4 (最终版) | msa_v4_final.mp4 | 12 | 335s | 2026-03-22 | KaTeX 公式 + 语法高亮代码 + 动态背景 + 标注 + 转场 |
 | 4 | MSA v2 (完整版) | msa_v2_triengine.mp4 | 12 | 335s | 2026-03-22 | v2 脚本 + 论文图片 + 中文语音，MC 场景暂 fallback Remotion |
 | 3 | (三引擎测试) | tri_engine_test.mp4 | 4 | 65s | 2026-03-22 | Remotion + MC + Manim 全验证 |
 | 2 | (E2E 测试) | e2e_mixed_test.mp4 | 4 | 86s | 2026-03-22 | Remotion + MC 混合验证 |
@@ -14,7 +15,8 @@
 ## 管线版本
 
 - **v1** (2026-03-22): 纯 Remotion，7 种 scene type
-- **v2** (2026-03-22): 三引擎融合，13 种 scene type（+code_diff, formula_derive, algorithm, flowchart, arch_3d, math_3d）
+- **v2** (2026-03-22): 三引擎融合，13 种 scene type
+- **v3** (2026-03-22): FormulaScene(KaTeX) + CodeScene(highlight.js) + 动态背景 + 标注系统 + 转场 + 进度条
 
 ## 基础设施状态
 
