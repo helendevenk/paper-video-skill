@@ -1,0 +1,35 @@
+{
+  "canvas": { "width": 1920, "height": 1080, "fps": 30 },
+  "colors": {
+    "background": "#0f172a",
+    "surface": "#1e293b",
+    "primary": "#3b82f6",
+    "secondary": "#8b5cf6",
+    "accent": "#10b981",
+    "text": "#f1f5f9",
+    "textMuted": "#94a3b8",
+    "highlight": "#fbbf24",
+    "error": "#ef4444"
+  },
+  "fonts": {
+    "heading": "Inter",
+    "body": "Inter",
+    "code": "JetBrains Mono",
+    "cjk": "Noto Sans CJK SC"
+  },
+  "spacing": {
+    "margin": 80,
+    "padding": 40,
+    "lineHeight": 1.6
+  },
+  "animation": {
+    "easing": "easeInOutCubic",
+    "durationPresets": {
+      "fast": 0.3,
+      "normal": 0.6,
+      "slow": 1.2
+    },
+    "fadeIn": 0.4,
+    "fadeOut": 0.3
+  }
+}

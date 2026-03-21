@@ -1,0 +1,231 @@
+{
+  "meta": {
+    "title": "MSA: Memory Sparse Attention",
+    "authors": [
+      "EverMind AI"
+    ],
+    "durationEstimateSeconds": 480,
+    "language": "zh-CN",
+    "style": "tech_explainer"
+  },
+  "scenes": [
+    {
+      "id": "s01_title",
+      "type": "title",
+      "narration": "今天我们来深度解读一篇重磅论文：Memory Sparse Attention，简称 MSA。它来自 EverMind AI，在 GitHub 上已经获得了超过 1400 颗星。这篇论文做了一件很疯狂的事情：让大语言模型的上下文窗口扩展到 1 亿个 token，而且精度几乎不下降。",
+      "durationHint": 18,
+      "transition": {
+        "type": "fade",
+        "durationSeconds": 0.5
+      },
+      "audio": {
+        "file": "assets/audio/s01_title.mp3",
+        "durationSeconds": 21.95,
+        "wordTimestamps": [
+          {
+            "word": "今天我们来深度解读一篇重磅论文：",
+            "startMs": 100,
+            "endMs": 2287
+          },
+          {
+            "word": "Memory Sparse Attention，",
+            "startMs": 2287,
+            "endMs": 5567
+          },
+          {
+            "word": "简称 MSA。",
+            "startMs": 5567,
+            "endMs": 6523
+          },
+          {
+            "word": "它来自 EverMind AI，",
+            "startMs": 6475,
+            "endMs": 8631
+          },
+          {
+            "word": "在 GitHub 上已经获得了超过 1400 颗星。",
+            "startMs": 8631,
+            "endMs": 12136
+          },
+          {
+            "word": "这篇论文做了一件很疯狂的事情：",
+            "startMs": 12137,
+            "endMs": 14823
+          },
+          {
+            "word": "让大语言模型的上下文窗口扩展到 1 亿个 token，",
+            "startMs": 14823,
+            "endMs": 19658
+          },
+          {
+            "word": "而且精度几乎不下降。",
+            "startMs": 19658,
+            "endMs": 21448
+          }
+        ]
+      },
+      "notes": "",
+      "visual": {
+        "title": "Memory Sparse Attention",
+        "subtitle": "让 LLM 的记忆扩展到 1 亿 Token",
+        "authors": [
+          "EverMind AI",
+          "★ 1,472"
+        ],
+        "background": "gradient_dark"
+      }
+    },
+    {
+      "id": "s_code_diff",
+      "type": "code_diff",
+      "narration": "代码从 v1 进化到 v2",
+      "durationHint": 8,
+      "transition": {
+        "type": "fade",
+        "durationSeconds": 0.5
+      },
+      "audio": null,
+      "notes": "",
+      "visual": {
+        "language": "python",
+        "codeV1": "def forward(self, x):\n    return self.linear(x)",
+        "codeV2": "def forward(self, x):\n    x = self.norm(x)\n    return self.linear(x)"
+      }
+    },
+    {
+      "id": "s_arch_3d",
+      "type": "arch_3d",
+      "narration": "模型的 3D 架构可视化",
+      "durationHint": 10,
+      "transition": {
+        "type": "fade",
+        "durationSeconds": 0.5
+      },
+      "audio": null,
+      "notes": "",
+      "visual": {
+        "layers": [
+          {
+            "name": "Embedding",
+            "type": "dense",
+            "size": [
+              3,
+              2,
+              0.3
+            ],
+            "color": "#3b82f6"
+          },
+          {
+            "name": "Attention",
+            "type": "attention",
+            "size": [
+              3,
+              3,
+              1
+            ],
+            "color": "#8b5cf6"
+          },
+          {
+            "name": "Output",
+            "type": "dense",
+            "size": [
+              3,
+              1,
+              0.3
+            ],
+            "color": "#10b981"
+          }
+        ],
+        "connections": "sequential"
+      }
+    },
+    {
+      "id": "s12_summary",
+      "type": "summary",
+      "narration": "总结一下。MSA 这篇论文最大的价值在于，它证明了一件事：端到端可训练的稀疏记忆，可以实用化地扩展到 1 亿 token 的上下文长度。它不需要复杂的 RAG 管线，不需要外部数据库，只靠模型自身的注意力机制就能完成超长上下文的检索和推理。在 2 块 A800 GPU 上就能跑 1 亿 token 的推理。这为解耦记忆容量和推理能力开辟了一条实用的道路。",
+      "durationHint": 25,
+      "transition": {
+        "type": "fade",
+        "durationSeconds": 0.5
+      },
+      "audio": {
+        "file": "assets/audio/s12_summary.mp3",
+        "durationSeconds": 30.2,
+        "wordTimestamps": [
+          {
+            "word": "总结一下。",
+            "startMs": 100,
+            "endMs": 1550
+          },
+          {
+            "word": "MSA 这篇论文最大的价值在于，",
+            "startMs": 1500,
+            "endMs": 4026
+          },
+          {
+            "word": "它证明了一件事：",
+            "startMs": 4026,
+            "endMs": 5289
+          },
+          {
+            "word": "端到端可训练的稀疏记忆，",
+            "startMs": 5289,
+            "endMs": 7184
+          },
+          {
+            "word": "可以实用化地扩展到 1 亿 token 的上下文长度。",
+            "startMs": 7184,
+            "endMs": 11448
+          },
+          {
+            "word": "它不需要复杂的 RAG 管线，",
+            "startMs": 11450,
+            "endMs": 14154
+          },
+          {
+            "word": "不需要外部数据库，",
+            "startMs": 14154,
+            "endMs": 15776
+          },
+          {
+            "word": "只靠模型自身的注意力机制就能完成超长上下文的检索和推理。",
+            "startMs": 15776,
+            "endMs": 20824
+          },
+          {
+            "word": "在 2 块 A800 GPU 上就能跑 1 亿 token 的推理。",
+            "startMs": 20825,
+            "endMs": 24837
+          },
+          {
+            "word": "这为解耦记忆容量和推理能力开辟了一条实用的道路。",
+            "startMs": 24837,
+            "endMs": 29700
+          }
+        ]
+      },
+      "notes": "",
+      "visual": {
+        "keyNumbers": [
+          {
+            "value": "100M",
+            "label": "最大上下文长度"
+          },
+          {
+            "value": "<9%",
+            "label": "精度衰减"
+          },
+          {
+            "value": "2×A800",
+            "label": "推理硬件需求"
+          },
+          {
+            "value": "+16%",
+            "label": "超越同骨干 RAG"
+          }
+        ],
+        "takeaway": "端到端可训练的稀疏记忆，可以实用化地扩展到 1 亿 token —— 无需 RAG 管线，解耦记忆与推理"
+      }
+    }
+  ]
+}
