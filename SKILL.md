@@ -1,6 +1,6 @@
 ---
 name: paper-video
-description: "论文解说视频生成器。输入论文 URL/PDF，自动生成 5-10 分钟的解说视频。三引擎渲染（Remotion + Motion Canvas + Manim），中文语音旁白 + 动画字幕。USE THIS SKILL whenever user wants to create explanation videos from academic papers, or says 论文视频、paper video、论文解说。"
+description: "USE THIS SKILL whenever user wants to create explanation videos from academic papers, or says 论文视频、paper video、论文解说、把论文做成视频。三引擎渲染（Remotion + Motion Canvas + Manim），输入论文 URL/PDF 自动生成 5-10 分钟解说视频，中文语音旁白 + 动画字幕。"
 version: "2.0"
 ---
 
