@@ -155,73 +155,72 @@ export const FigureScene: React.FC<{ visual: FigureVisual }> = ({ visual }) => {
               delay: annStart,
             });
             const annColor = ann.color || colors.accent;
-            const pulseScale = 1 + Math.sin(t * 3.5 - i * 1.5) * 0.06;
+            const annStyle = (ann as any).style || "label";
+            const boxW = (ann as any).w || 0;
+            const boxH = (ann as any).h || 0;
+            const hasBox = annStyle === "box" && boxW > 0 && boxH > 0;
+            const pulseScale = 1 + Math.sin(t * 3.5 - i * 1.5) * 0.05;
 
-            // Is this the currently active annotation?
             const isCurrentAnn =
               frame >= annStart &&
               (i === annotations.length - 1 || frame < 20 + (i + 1) * annInterval);
 
             return (
               <div key={i} style={{ opacity: annSpring }}>
-                {/* Highlight rectangle area around the point */}
-                <div
-                  style={{
-                    position: "absolute",
-                    left: `${ann.x * 100 - 8}%`,
-                    top: `${ann.y * 100 - 6}%`,
-                    width: "16%",
-                    height: "12%",
-                    border: `2.5px solid ${annColor}${isCurrentAnn ? "cc" : "60"}`,
-                    borderRadius: 8,
-                    boxShadow: isCurrentAnn
-                      ? `0 0 20px ${annColor}40, inset 0 0 15px ${annColor}10`
-                      : "none",
-                    transform: `scale(${isCurrentAnn ? pulseScale : 1})`,
-                    pointerEvents: "none",
-                  }}
-                />
-
-                {/* Corner markers at the highlight box corners */}
-                {[
-                  { cx: ann.x * 100 - 8, cy: ann.y * 100 - 6 },
-                  { cx: ann.x * 100 + 8, cy: ann.y * 100 - 6 },
-                  { cx: ann.x * 100 - 8, cy: ann.y * 100 + 6 },
-                  { cx: ann.x * 100 + 8, cy: ann.y * 100 + 6 },
-                ].map((corner, ci) => (
+                {/* Highlight box — only if w/h specified and style=box */}
+                {hasBox && (
                   <div
-                    key={ci}
                     style={{
                       position: "absolute",
-                      left: `${corner.cx}%`,
-                      top: `${corner.cy}%`,
-                      width: 8,
-                      height: 8,
-                      backgroundColor: annColor,
-                      borderRadius: 2,
-                      transform: "translate(-50%, -50%)",
-                      opacity: isCurrentAnn ? 0.9 : 0.4,
+                      left: `${(ann.x - boxW / 2) * 100}%`,
+                      top: `${(ann.y - boxH / 2) * 100}%`,
+                      width: `${boxW * 100}%`,
+                      height: `${boxH * 100}%`,
+                      border: `2.5px solid ${annColor}${isCurrentAnn ? "cc" : "50"}`,
+                      borderRadius: 6,
+                      boxShadow: isCurrentAnn
+                        ? `0 0 16px ${annColor}30`
+                        : "none",
+                      transform: `scale(${isCurrentAnn ? pulseScale : 1})`,
                       pointerEvents: "none",
                     }}
                   />
-                ))}
+                )}
 
-                {/* Label badge positioned above the highlight box */}
+                {/* Pointer dot — small circle at the annotation point */}
+                {annStyle === "pointer" && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      left: `${ann.x * 100}%`,
+                      top: `${ann.y * 100}%`,
+                      width: 12,
+                      height: 12,
+                      borderRadius: "50%",
+                      backgroundColor: annColor,
+                      transform: "translate(-50%, -50%)",
+                      boxShadow: `0 0 12px ${annColor}80`,
+                      pointerEvents: "none",
+                    }}
+                  />
+                )}
+
+                {/* Label badge — positioned near the annotation point */}
                 <div
                   style={{
                     position: "absolute",
                     left: `${ann.x * 100}%`,
-                    top: `${Math.max(ann.y * 100 - 10, 2)}%`,
-                    transform: `translate(-50%, -100%) scale(${interpolate(annSpring, [0, 1], [0.6, 1])})`,
+                    top: `${ann.y * 100}%`,
+                    transform: `translate(-50%, ${hasBox ? `-${boxH * 50 + 110}%` : "-130%"}) scale(${interpolate(annSpring, [0, 1], [0.6, 1])})`,
                     backgroundColor: `${annColor}ee`,
                     color: "#fff",
-                    padding: "8px 18px",
-                    borderRadius: 8,
-                    fontSize: 20,
+                    padding: "7px 16px",
+                    borderRadius: 7,
+                    fontSize: 18,
                     fontFamily: fontFamily.sans,
                     fontWeight: 700,
                     whiteSpace: "nowrap",
-                    boxShadow: `0 4px 16px rgba(0,0,0,0.4)`,
+                    boxShadow: `0 3px 12px rgba(0,0,0,0.4)`,
                     pointerEvents: "none",
                   }}
                 >

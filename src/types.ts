@@ -29,6 +29,9 @@ export const AnnotationSchema = z.object({
   y: z.number(),
   text: z.string(),
   color: z.string().default("#4CAF50"),
+  w: z.number().optional(),  // highlight box width (% of image, 0 = no box)
+  h: z.number().optional(),  // highlight box height (% of image, 0 = no box)
+  style: z.enum(["box", "label", "pointer"]).default("box"),
 });
 
 // ─── Visual payloads per scene type ───

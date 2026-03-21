@@ -219,33 +219,20 @@
       "visual": {
         "src": "assets/figures/fig1_scaling.png",
         "caption": "Figure 1: 16K → 100M token 扩展曲线",
-        "zoomRegion": {
-          "x": 0.55,
-          "y": 0.05,
-          "w": 0.4,
-          "h": 0.45
-        },
+        "zoomRegion": null,
         "annotations": [
           {
-            "x": 0.82,
-            "y": 0.22,
+            "x": 0.7,
+            "y": 0.3,
             "text": "MSA < 9% 衰减",
-            "color": "#10b981",
-            "style": "label"
-          },
-          {
-            "x": 0.6,
-            "y": 0.6,
-            "text": "其他方案衰减",
-            "color": "#ef4444",
-            "style": "label"
+            "color": "#10b981"
           }
         ]
       }
     },
     {
       "id": "s04_architecture_flow",
-      "type": "bullet",
+      "type": "flowchart",
       "narration": "MSA 的整体架构分三个阶段。第一阶段是离线的全局记忆编码：把文档语料跑一遍前向传播，用 Chunk-Mean Pooling 压缩每个文档的 KV 缓存。第二阶段是在线路由：用户查询进来后，路由器计算查询和每个压缩文档的相关性分数，选出 Top-k 个最相关的。第三阶段是稀疏生成：只用选中的 KV 加上本地上下文做自回归生成。",
       "durationHint": 30,
       "transition": {
@@ -310,11 +297,110 @@
       },
       "notes": "",
       "visual": {
-        "heading": "MSA 三阶段架构",
-        "points": [
-          "1. 离线编码：文档语料 → 前向传播 → Chunk-Mean Pooling → 压缩 KV 缓存",
-          "2. 在线路由：用户查询 → 路由器 Qᵣ·K̄ᵣ → Top-k 选择",
-          "3. 稀疏生成：选中 KV + 本地 KV → 拼接 → 自回归生成"
+        "nodes": [
+          {
+            "id": "corpus",
+            "label": "文档语料",
+            "type": "io"
+          },
+          {
+            "id": "encode",
+            "label": "离线编码\n(前向传播)",
+            "type": "process"
+          },
+          {
+            "id": "compress",
+            "label": "Chunk-Mean\nPooling",
+            "type": "process"
+          },
+          {
+            "id": "kv_cache",
+            "label": "压缩 KV 缓存\n(K̄, V̄, K̄ᵣ)",
+            "type": "io"
+          },
+          {
+            "id": "query",
+            "label": "用户查询",
+            "type": "io"
+          },
+          {
+            "id": "router",
+            "label": "在线路由\n(Qᵣ · K̄ᵣ)",
+            "type": "process"
+          },
+          {
+            "id": "topk",
+            "label": "Top-k 选择",
+            "type": "decision"
+          },
+          {
+            "id": "assemble",
+            "label": "上下文拼接\n(K̄_topk + K_local)",
+            "type": "process"
+          },
+          {
+            "id": "generate",
+            "label": "稀疏生成",
+            "type": "start_end"
+          }
+        ],
+        "edges": [
+          {
+            "from": "corpus",
+            "to": "encode",
+            "label": ""
+          },
+          {
+            "from": "encode",
+            "to": "compress",
+            "label": ""
+          },
+          {
+            "from": "compress",
+            "to": "kv_cache",
+            "label": ""
+          },
+          {
+            "from": "query",
+            "to": "router",
+            "label": ""
+          },
+          {
+            "from": "kv_cache",
+            "to": "router",
+            "label": "K̄ᵣ"
+          },
+          {
+            "from": "router",
+            "to": "topk",
+            "label": "scores"
+          },
+          {
+            "from": "topk",
+            "to": "assemble",
+            "label": ""
+          },
+          {
+            "from": "kv_cache",
+            "to": "assemble",
+            "label": "K̄, V̄"
+          },
+          {
+            "from": "assemble",
+            "to": "generate",
+            "label": ""
+          }
+        ],
+        "revealOrder": [
+          "corpus",
+          "encode",
+          "compress",
+          "kv_cache",
+          "query",
+          "router",
+          "topk",
+          "assemble",
+          "generate"
         ]
       }
     },
@@ -383,34 +469,12 @@
         "src": "assets/figures/fig2_msa_layer.png",
         "caption": "Figure 2: MSA 注意力层 + Parallel/Global RoPE",
         "zoomRegion": null,
-        "annotations": [
-          {
-            "x": 0.18,
-            "y": 0.5,
-            "text": "文档独立编码",
-            "color": "#3b82f6",
-            "style": "label"
-          },
-          {
-            "x": 0.5,
-            "y": 0.45,
-            "text": "Top-k 路由",
-            "color": "#10b981",
-            "style": "label"
-          },
-          {
-            "x": 0.82,
-            "y": 0.3,
-            "text": "RoPE 位置编码",
-            "color": "#8b5cf6",
-            "style": "label"
-          }
-        ]
+        "annotations": []
       }
     },
     {
       "id": "s06_formula",
-      "type": "bullet",
+      "type": "formula_derive",
       "narration": "来看核心公式。路由分数的计算分三步。第一步，查询的路由向量和每个文档的路由键做点积。第二步，对 attention head 维度取均值，再对 token 维度取最大值，得到每个文档的路由分数。第三步，取 Top-k 个分数最高的文档索引。最后把选中文档的压缩 KV 和本地 KV 拼接起来，作为生成的上下文。",
       "durationHint": 30,
       "transition": {
@@ -485,18 +549,30 @@
       },
       "notes": "",
       "visual": {
-        "heading": "路由分数计算",
-        "points": [
-          "Score = Qᵣ · Kᵣᵢᵀ (Query-Key 点积)",
-          "Sᵢ = max_t mean_h(Score) (Head 均值 + Token 最大值)",
-          "Top-k: {i | Sᵢ ≥ S₍ₖ₎} (筛选最相关文档)",
-          "Context = Concat(K̄_topk, K_local) (上下文拼接)"
-        ]
+        "steps": [
+          {
+            "latex": "\\text{Score}_{raw} = Q_r \\cdot K_{r,i}^T",
+            "label": "Query-Key 点积"
+          },
+          {
+            "latex": "S_i = \\max_t \\text{mean}_h(\\text{Score}_{raw})",
+            "label": "Head 均值 + Token 最大值"
+          },
+          {
+            "latex": "\\text{Top-k}: \\{i \\mid S_i \\geq S_{(k)}\\}",
+            "label": "Top-k 筛选"
+          },
+          {
+            "latex": "\\text{Context} = \\text{Concat}(\\bar{K}_{\\text{top-k}}, K_{\\text{local}})",
+            "label": "上下文拼接"
+          }
+        ],
+        "direction": "forward"
       }
     },
     {
       "id": "s07_algorithm",
-      "type": "bullet",
+      "type": "algorithm",
       "narration": "把刚才的公式翻译成算法步骤。MSA Router 函数接收查询 Q 和压缩后的 K。先做 einsum 计算路由分数矩阵，然后对 head 维度取均值、对 token 维度取最大值，得到每个文档的分数。接着 argsort 取 Top-k 索引。最后 gather 选中文档的 KV，和本地 KV 拼接返回。整个过程是可微分的，可以端到端训练。",
       "durationHint": 30,
       "transition": {
@@ -566,12 +642,13 @@
       },
       "notes": "",
       "visual": {
-        "heading": "MSA Router 算法",
-        "points": [
-          "scores = einsum(Qᵣ, Kᵣ) — 计算路由分数矩阵",
-          "scores = mean → max — Head 均值 + Token 最大值",
-          "top_k = argsort(scores)[:k] — 取 Top-k 索引",
-          "context = concat(gather(KV, top_k), local_kv) — 拼接上下文"
+        "title": "MSA Router Algorithm",
+        "pseudocode": "function MSA_Router(Q, K_compressed, k):\n    scores = einsum('bhqd,bkd->bhqk', Q_r, K_r)\n    scores = mean(scores, dim=heads)\n    scores = max(scores, dim=tokens)\n    top_k_idx = argsort(scores)[:k]\n    selected_kv = gather(KV_compressed, top_k_idx)\n    context = concat(selected_kv, local_kv)\n    return context",
+        "highlightSteps": [
+          1,
+          2,
+          3,
+          4
         ]
       }
     },
@@ -664,35 +741,8 @@
       "visual": {
         "src": "assets/figures/fig3_inference.png",
         "caption": "Figure 3: 三阶段推理 + Memory Interleave",
-        "zoomRegion": {
-          "x": 0.3,
-          "y": 0.15,
-          "w": 0.5,
-          "h": 0.6
-        },
-        "annotations": [
-          {
-            "x": 0.13,
-            "y": 0.15,
-            "text": "① 离线编码",
-            "color": "#3b82f6",
-            "style": "label"
-          },
-          {
-            "x": 0.48,
-            "y": 0.1,
-            "text": "② 在线路由",
-            "color": "#10b981",
-            "style": "label"
-          },
-          {
-            "x": 0.85,
-            "y": 0.1,
-            "text": "③ 稀疏生成",
-            "color": "#fbbf24",
-            "style": "label"
-          }
-        ]
+        "zoomRegion": null,
+        "annotations": []
       }
     },
     {
@@ -867,17 +917,9 @@
         "annotations": [
           {
             "x": 0.8,
-            "y": 0.18,
-            "text": "MSA: 94.84%",
-            "color": "#10b981",
-            "style": "label"
-          },
-          {
-            "x": 0.35,
-            "y": 0.7,
-            "text": "Backbone: 24.69%",
-            "color": "#ef4444",
-            "style": "label"
+            "y": 0.2,
+            "text": "MSA: 94.84% @1M",
+            "color": "#10b981"
           }
         ]
       }
@@ -947,22 +989,7 @@
         "src": "assets/figures/training_time_vs_context_length_updated.png",
         "caption": "训练时间 vs 上下文长度对比",
         "zoomRegion": null,
-        "annotations": [
-          {
-            "x": 0.78,
-            "y": 0.15,
-            "text": "Full Attention O(n²)",
-            "color": "#ef4444",
-            "style": "label"
-          },
-          {
-            "x": 0.78,
-            "y": 0.72,
-            "text": "MSA 近线性",
-            "color": "#3b82f6",
-            "style": "label"
-          }
-        ]
+        "annotations": []
       }
     },
     {
