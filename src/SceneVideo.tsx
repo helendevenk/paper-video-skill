@@ -4,6 +4,8 @@ import { BulletScene } from "./scenes/BulletScene";
 import { FigureScene } from "./scenes/FigureScene";
 import { CompareScene } from "./scenes/CompareScene";
 import { SummaryScene } from "./scenes/SummaryScene";
+import { FormulaScene } from "./scenes/FormulaScene";
+import { CodeScene } from "./scenes/CodeScene";
 import { AnimatedCaption } from "./components/AnimatedCaption";
 import { ProgressBar } from "./components/ProgressBar";
 import { fontFaceCSS } from "./styles/fonts";
@@ -38,6 +40,11 @@ export const SceneVideo: React.FC<SceneVideoProps> = ({ scene }) => {
         return <CompareScene visual={scene.visual as any} />;
       case "summary":
         return <SummaryScene visual={scene.visual as any} />;
+      case "formula":
+      case "formula_derive":
+        return <FormulaScene visual={scene.visual as any} />;
+      case "code":
+        return <CodeScene visual={scene.visual as any} />;
       default:
         return (
           <AbsoluteFill

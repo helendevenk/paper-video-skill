@@ -15,6 +15,8 @@
     "@remotion/media-utils": "^4.0.422",
     "@remotion/renderer": "^4.0.422",
     "@remotion/transitions": "^4.0.422",
+    "highlight.js": "^11.11.1",
+    "katex": "^0.16.40",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "remotion": "^4.0.422",
