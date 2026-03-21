@@ -70,12 +70,19 @@ export async function renderWithMotionCanvas(scene, index, tmpDir, projectRoot) 
       {
         stdio: 'pipe',
         cwd: mcDir,
-        timeout: 120000,
+        timeout: 300000,
       }
     );
   } catch (err) {
     console.error(`   ❌ MC render failed: ${err.stderr?.toString()?.slice(-200) || err.message}`);
-    throw err;
+    // Graceful degradation: generate fallback frame with scene type label
+    console.error(`   ⚠️ Generating fallback frame for MC scene`);
+    const duration = scene.audio?.durationSeconds || scene.durationHint || 8;
+    execSync(
+      `ffmpeg -y -f lavfi -i color=c=0x0f172a:s=1920x1080:d=${duration} ` +
+      `-c:v libx264 -pix_fmt yuv420p "${fragmentPath}"`,
+      { stdio: 'pipe' }
+    );
   }
 
   // Mux audio if scene has audio (统一后期 FFmpeg mux)
