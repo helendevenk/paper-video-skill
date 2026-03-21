@@ -24,7 +24,7 @@ export const SummaryScene: React.FC<{ visual: SummaryVisual }> = ({
 
   return (
     <AbsoluteFill>
-      <Background variant="gradient_blue" />
+      <Background variant="gradient_blue" sceneType="summary" />
 
       <div
         style={{

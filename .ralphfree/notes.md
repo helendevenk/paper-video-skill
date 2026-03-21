@@ -42,3 +42,24 @@
 ### 脚本生成
 - LLM 需要 few-shot examples 才能正确选择新 scene type
 - `templates/paper_script.md` 包含所有 type 的 visual 格式说明
+
+## 2026-03-22: MSA v2 渲染经验
+
+### MC 渲染性能瓶颈（待优化）
+- render-mc.mjs 每次调用都重启 Vite server + Playwright，开销 ~120s
+- flowchart 场景（9 节点 + 9 边）超过 300s timeout
+- **根因**：MC 没有持久化 server 模式，每次渲染都是冷启动
+- **解决方向**：
+  1. 保持 Vite server 长驻，多场景复用同一 server
+  2. 或者把所有 MC 场景合并到一个 project 一次性渲染，再 FFmpeg 切割
+  3. 临时方案：MC 场景 fallback 到 Remotion 的 bullet 占位
+
+### 实际渲染时间
+- 12 场景纯 Remotion：169s（平均 14s/场景）
+- MC 场景冷启动：>120s/场景（不可接受）
+- 建议：简单场景（<5 节点的 flowchart）可以考虑直接 Remotion 实现
+
+### 脚本设计
+- v2 脚本比 v1 内容更深入（加了公式推导、算法步骤、架构流程图）
+- 即使 MC 场景 fallback 到 bullet，内容深度也比 v1 好很多
+- 图片场景效果最稳定，论文原图 > 自生成

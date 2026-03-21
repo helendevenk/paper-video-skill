@@ -1,4 +1,4 @@
-import { useCurrentFrame, useVideoConfig, interpolate, spring } from "remotion";
+import { useCurrentFrame, useVideoConfig, interpolate } from "remotion";
 import { fontFamily } from "../styles/fonts";
 import { colors } from "../styles/colors";
 import type { WordTimestamp } from "../types";
@@ -7,11 +7,6 @@ interface AnimatedCaptionProps {
   wordTimestamps: WordTimestamp[];
 }
 
-/**
- * Sentence-level caption display.
- * Shows one sentence at a time with smooth fade transitions.
- * Current sentence highlighted, previous sentence fades out.
- */
 export const AnimatedCaption: React.FC<AnimatedCaptionProps> = ({
   wordTimestamps,
 }) => {
@@ -21,18 +16,16 @@ export const AnimatedCaption: React.FC<AnimatedCaptionProps> = ({
 
   if (wordTimestamps.length === 0) return null;
 
-  // Find current sentence (each WordTimestamp entry is a sentence/clause)
   const currentIdx = wordTimestamps.findIndex(
     (w) => w.startMs <= currentMs && w.endMs >= currentMs
   );
 
-  // If between sentences, show the last one fading out
   if (currentIdx === -1) {
     const lastIdx = wordTimestamps.findLastIndex((w) => w.endMs <= currentMs);
     if (lastIdx === -1) return null;
     const elapsed = currentMs - wordTimestamps[lastIdx].endMs;
-    if (elapsed > 400) return null;
-    const opacity = interpolate(elapsed, [0, 400], [1, 0], {
+    if (elapsed > 500) return null;
+    const opacity = interpolate(elapsed, [0, 500], [1, 0], {
       extrapolateRight: "clamp",
     });
     return (
@@ -44,9 +37,7 @@ export const AnimatedCaption: React.FC<AnimatedCaptionProps> = ({
   const sentenceDur = sentence.endMs - sentence.startMs;
   const elapsed = currentMs - sentence.startMs;
   const progress = sentenceDur > 0 ? Math.min(elapsed / sentenceDur, 1) : 1;
-
-  // Fade in at the start of each sentence
-  const fadeIn = interpolate(elapsed, [0, 200], [0, 1], {
+  const fadeIn = interpolate(elapsed, [0, 150], [0, 1], {
     extrapolateRight: "clamp",
   });
 
@@ -58,16 +49,14 @@ const CaptionLine: React.FC<{
   opacity: number;
   progress: number;
 }> = ({ text, opacity, progress }) => {
-  // Split long sentences into multiple lines (~20 chars per line for Chinese)
-  const maxCharsPerLine = 20;
+  const maxCharsPerLine = 22;
   const lines: string[] = [];
   let remaining = text;
 
   while (remaining.length > maxCharsPerLine) {
-    // Find a good break point (punctuation or space)
     let breakIdx = -1;
     const punctuation = "，。、；：！？,.;:!? ";
-    for (let i = maxCharsPerLine; i >= maxCharsPerLine - 5 && i > 0; i--) {
+    for (let i = maxCharsPerLine; i >= maxCharsPerLine - 6 && i > 0; i--) {
       if (punctuation.includes(remaining[i])) {
         breakIdx = i + 1;
         break;
@@ -79,33 +68,31 @@ const CaptionLine: React.FC<{
   }
   if (remaining) lines.push(remaining);
 
-  // Calculate how many chars to highlight (reading progress)
   const totalChars = text.length;
   const highlightedChars = Math.floor(progress * totalChars);
-
   let charCount = 0;
 
   return (
     <div
       style={{
         position: "absolute",
-        bottom: 60,
-        left: 60,
-        right: 60,
+        bottom: 40,
+        left: 0,
+        right: 0,
         display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        gap: 8,
+        justifyContent: "center",
         opacity,
       }}
     >
-      {/* Semi-transparent background pill */}
+      {/* Full-width semi-transparent bar */}
       <div
         style={{
-          backgroundColor: "rgba(0, 0, 0, 0.65)",
-          borderRadius: 16,
-          padding: "16px 32px",
-          backdropFilter: "blur(8px)",
+          backgroundColor: "rgba(0, 0, 0, 0.72)",
+          borderRadius: 12,
+          padding: "18px 48px",
+          backdropFilter: "blur(12px)",
+          maxWidth: "80%",
+          border: `1px solid rgba(255,255,255,0.08)`,
         }}
       >
         {lines.map((line, lineIdx) => (
@@ -113,7 +100,7 @@ const CaptionLine: React.FC<{
             key={lineIdx}
             style={{
               textAlign: "center",
-              lineHeight: 1.7,
+              lineHeight: 1.8,
             }}
           >
             {line.split("").map((char, charIdx) => {
@@ -124,11 +111,13 @@ const CaptionLine: React.FC<{
                   key={charIdx}
                   style={{
                     fontFamily: fontFamily.sans,
-                    fontSize: 36,
+                    fontSize: 38,
                     fontWeight: 600,
-                    color: isHighlighted ? colors.textHighlight : `${colors.textPrimary}99`,
+                    color: isHighlighted
+                      ? colors.textHighlight
+                      : `${colors.textPrimary}60`,
                     textShadow: isHighlighted
-                      ? "0 1px 4px rgba(0,0,0,0.5)"
+                      ? "0 2px 8px rgba(0,0,0,0.6)"
                       : "none",
                   }}
                 >

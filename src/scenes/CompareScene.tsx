@@ -19,18 +19,16 @@ interface CompareVisual {
 
 export const CompareScene: React.FC<{ visual: CompareVisual }> = ({ visual }) => {
   const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
+  const { fps, durationInFrames } = useVideoConfig();
 
-  const tableSpring = spring({
-    frame,
-    fps,
-    config: springConfigs.gentle,
-    delay: 10,
-  });
+  // Row-by-row reveal interval
+  const rowInterval = Math.floor(
+    (durationInFrames - 40) / Math.max(visual.rows.length, 1)
+  );
 
   return (
     <AbsoluteFill>
-      <Background />
+      <Background sceneType="compare" />
 
       <div
         style={{
@@ -60,13 +58,7 @@ export const CompareScene: React.FC<{ visual: CompareVisual }> = ({ visual }) =>
         )}
 
         {/* Table */}
-        <div
-          style={{
-            width: "100%",
-            opacity: tableSpring,
-            transform: `translateY(${interpolate(tableSpring, [0, 1], [30, 0])}px)`,
-          }}
-        >
+        <div style={{ width: "100%" }}>
           <table
             style={{
               width: "100%",
@@ -75,29 +67,39 @@ export const CompareScene: React.FC<{ visual: CompareVisual }> = ({ visual }) =>
               fontFamily: fontFamily.sans,
             }}
           >
-            {/* Header */}
+            {/* Header row */}
             <thead>
               <tr>
-                {visual.headers.map((h, i) => (
-                  <th
-                    key={i}
-                    style={{
-                      padding: "16px 24px",
-                      fontSize: 26,
-                      fontWeight: 700,
-                      color: colors.primary,
-                      textAlign: i === 0 ? "left" : "center",
-                      borderBottom: `2px solid ${colors.primary}40`,
-                    }}
-                  >
-                    {h}
-                  </th>
-                ))}
+                {visual.headers.map((h, i) => {
+                  const hSpring = spring({
+                    frame,
+                    fps,
+                    config: springConfigs.snappy,
+                    delay: 8 + i * 3,
+                  });
+                  return (
+                    <th
+                      key={i}
+                      style={{
+                        padding: "16px 24px",
+                        fontSize: 26,
+                        fontWeight: 700,
+                        color: colors.primary,
+                        textAlign: i === 0 ? "left" : "center",
+                        borderBottom: `2px solid ${colors.primary}40`,
+                        opacity: hSpring,
+                        transform: `translateY(${interpolate(hSpring, [0, 1], [15, 0])}px)`,
+                      }}
+                    >
+                      {h}
+                    </th>
+                  );
+                })}
               </tr>
             </thead>
             <tbody>
               {visual.rows.map((row, rowIdx) => {
-                const rowDelay = 20 + rowIdx * 8;
+                const rowDelay = 20 + rowIdx * Math.min(rowInterval / 2, 12);
                 const rowSpring = spring({
                   frame,
                   fps,
@@ -105,6 +107,27 @@ export const CompareScene: React.FC<{ visual: CompareVisual }> = ({ visual }) =>
                   delay: rowDelay,
                 });
                 const isHighlight = rowIdx === visual.highlightRow;
+
+                // Active row tracking — highlight current row being narrated
+                const rowActiveStart = 20 + rowIdx * rowInterval;
+                const rowActiveEnd =
+                  rowIdx < visual.rows.length - 1
+                    ? 20 + (rowIdx + 1) * rowInterval
+                    : durationInFrames;
+                const isCurrentlyActive =
+                  frame >= rowActiveStart && frame < rowActiveEnd;
+
+                const bgColor = isHighlight
+                  ? `${colors.accent}20`
+                  : isCurrentlyActive
+                    ? `${colors.primary}12`
+                    : `${colors.bgCard}80`;
+
+                const textColor = isHighlight
+                  ? colors.accent
+                  : isCurrentlyActive
+                    ? colors.textHighlight
+                    : colors.textPrimary;
 
                 return (
                   <tr
@@ -120,19 +143,22 @@ export const CompareScene: React.FC<{ visual: CompareVisual }> = ({ visual }) =>
                         style={{
                           padding: "14px 24px",
                           fontSize: 28,
-                          fontWeight: isHighlight ? 800 : 400,
-                          color: isHighlight
-                            ? colors.accent
-                            : colors.textPrimary,
+                          fontWeight: isHighlight ? 800 : isCurrentlyActive ? 600 : 400,
+                          color: textColor,
                           textAlign: cellIdx === 0 ? "left" : "center",
-                          backgroundColor: isHighlight
-                            ? `${colors.accent}15`
-                            : `${colors.bgCard}80`,
-                          borderRadius: cellIdx === 0
-                            ? "8px 0 0 8px"
-                            : cellIdx === row.length - 1
-                              ? "0 8px 8px 0"
-                              : 0,
+                          backgroundColor: bgColor,
+                          borderRadius:
+                            cellIdx === 0
+                              ? "8px 0 0 8px"
+                              : cellIdx === row.length - 1
+                                ? "0 8px 8px 0"
+                                : 0,
+                          borderLeft:
+                            cellIdx === 0 && (isHighlight || isCurrentlyActive)
+                              ? `4px solid ${isHighlight ? colors.accent : colors.primary}`
+                              : cellIdx === 0
+                                ? "4px solid transparent"
+                                : "none",
                         }}
                       >
                         {cell}

@@ -1,4 +1,4 @@
-import { AbsoluteFill, Audio, staticFile } from "remotion";
+import { AbsoluteFill, Audio, useCurrentFrame, useVideoConfig, interpolate } from "remotion";
 import { TitleScene } from "./scenes/TitleScene";
 import { BulletScene } from "./scenes/BulletScene";
 import { FigureScene } from "./scenes/FigureScene";
@@ -10,6 +10,22 @@ import { fontFaceCSS } from "./styles/fonts";
 import type { SceneVideoProps } from "./types";
 
 export const SceneVideo: React.FC<SceneVideoProps> = ({ scene }) => {
+  const frame = useCurrentFrame();
+  const { durationInFrames } = useVideoConfig();
+
+  // Scene fade-in/fade-out transition
+  const fadeFrames = 12;
+  const fadeIn = interpolate(frame, [0, fadeFrames], [0, 1], {
+    extrapolateRight: "clamp",
+  });
+  const fadeOut = interpolate(
+    frame,
+    [durationInFrames - fadeFrames, durationInFrames],
+    [1, 0],
+    { extrapolateLeft: "clamp" }
+  );
+  const sceneOpacity = Math.min(fadeIn, fadeOut);
+
   const renderScene = () => {
     switch (scene.type) {
       case "title":
@@ -23,11 +39,10 @@ export const SceneVideo: React.FC<SceneVideoProps> = ({ scene }) => {
       case "summary":
         return <SummaryScene visual={scene.visual as any} />;
       default:
-        // Placeholder for unimplemented scene types
         return (
           <AbsoluteFill
             style={{
-              backgroundColor: "#1a1a2e",
+              backgroundColor: "#0f0f1a",
               display: "flex",
               justifyContent: "center",
               alignItems: "center",
@@ -49,10 +64,12 @@ export const SceneVideo: React.FC<SceneVideoProps> = ({ scene }) => {
       {/* Load fonts */}
       <style dangerouslySetInnerHTML={{ __html: fontFaceCSS }} />
 
-      {/* Scene content */}
-      {renderScene()}
+      {/* Scene content with fade transition */}
+      <AbsoluteFill style={{ opacity: sceneOpacity }}>
+        {renderScene()}
+      </AbsoluteFill>
 
-      {/* Audio (if available) */}
+      {/* Audio */}
       {scene.audio?.file && <Audio src={scene.audio.file} />}
 
       {/* Captions */}

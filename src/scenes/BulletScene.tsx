@@ -20,14 +20,13 @@ export const BulletScene: React.FC<{ visual: BulletVisual }> = ({ visual }) => {
     delay: 5,
   });
 
-  // Evenly space bullet reveals across the scene duration
   const bulletInterval = Math.floor(
     (durationInFrames - 30) / Math.max(visual.points.length, 1)
   );
 
   return (
     <AbsoluteFill>
-      <Background />
+      <Background sceneType="bullet" />
 
       <div
         style={{
@@ -39,23 +38,36 @@ export const BulletScene: React.FC<{ visual: BulletVisual }> = ({ visual }) => {
           padding: "0 120px",
         }}
       >
-        {/* Heading */}
-        <h2
-          style={{
-            fontFamily: fontFamily.sans,
-            fontSize: 56,
-            fontWeight: 900,
-            color: colors.primary,
-            marginBottom: 48,
-            transform: `translateY(${interpolate(headingSpring, [0, 1], [30, 0])}px)`,
-            opacity: headingSpring,
-          }}
-        >
-          {visual.heading}
-        </h2>
+        {/* Heading with left accent bar */}
+        <div style={{ display: "flex", alignItems: "center", marginBottom: 48 }}>
+          <div
+            style={{
+              width: 5,
+              height: 44,
+              backgroundColor: colors.primary,
+              borderRadius: 3,
+              marginRight: 20,
+              opacity: headingSpring,
+              transform: `scaleY(${headingSpring})`,
+            }}
+          />
+          <h2
+            style={{
+              fontFamily: fontFamily.sans,
+              fontSize: 52,
+              fontWeight: 900,
+              color: colors.primary,
+              margin: 0,
+              transform: `translateY(${interpolate(headingSpring, [0, 1], [20, 0])}px)`,
+              opacity: headingSpring,
+            }}
+          >
+            {visual.heading}
+          </h2>
+        </div>
 
-        {/* Bullet points */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
+        {/* Bullet points with progressive highlight */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
           {visual.points.map((point, i) => {
             const delay = 15 + i * Math.min(bulletInterval, 20);
             const pointSpring = spring({
@@ -65,11 +77,32 @@ export const BulletScene: React.FC<{ visual: BulletVisual }> = ({ visual }) => {
               delay,
             });
 
-            // Highlight the "current" bullet based on time
-            const isActive =
-              frame >= delay + 10 &&
-              (i === visual.points.length - 1 ||
-                frame < 15 + (i + 1) * Math.min(bulletInterval, 20) + 10);
+            // Active = currently being narrated
+            const activateFrame = delay + 10;
+            const nextActivateFrame =
+              i < visual.points.length - 1
+                ? 15 + (i + 1) * Math.min(bulletInterval, 20) + 10
+                : durationInFrames;
+            const isActive = frame >= activateFrame && frame < nextActivateFrame;
+            const isPast = frame >= nextActivateFrame;
+
+            // Smooth transition for active state
+            const activeProgress = isActive
+              ? interpolate(
+                  frame,
+                  [activateFrame, activateFrame + 10],
+                  [0, 1],
+                  { extrapolateRight: "clamp" }
+                )
+              : 0;
+
+            const textColor = isActive
+              ? colors.textHighlight
+              : isPast
+                ? `${colors.textPrimary}70`
+                : colors.textPrimary;
+
+            const fontSize = isActive ? 38 : 36;
 
             return (
               <div
@@ -82,30 +115,49 @@ export const BulletScene: React.FC<{ visual: BulletVisual }> = ({ visual }) => {
                   opacity: pointSpring,
                 }}
               >
-                {/* Bullet dot */}
+                {/* Animated bullet indicator */}
                 <div
                   style={{
-                    width: 12,
-                    height: 12,
-                    borderRadius: 6,
-                    backgroundColor: isActive
-                      ? colors.primary
-                      : colors.textSecondary,
+                    width: 14,
+                    height: 14,
+                    borderRadius: 7,
                     marginTop: 14,
                     flexShrink: 0,
+                    backgroundColor: isActive
+                      ? colors.primary
+                      : isPast
+                        ? `${colors.primary}50`
+                        : colors.textSecondary,
                     boxShadow: isActive
-                      ? `0 0 12px ${colors.primary}80`
+                      ? `0 0 16px ${colors.primary}90, 0 0 4px ${colors.primary}`
                       : "none",
+                    transform: `scale(${isActive ? 1.2 : 1})`,
+                    transition: "transform 0.2s",
                   }}
                 />
+
+                {/* Active left glow bar */}
+                {isActive && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      left: 95,
+                      top: 0,
+                      width: 3,
+                      height: "100%",
+                      backgroundColor: colors.primary,
+                      borderRadius: 2,
+                      opacity: activeProgress * 0.6,
+                    }}
+                  />
+                )}
+
                 <p
                   style={{
                     fontFamily: fontFamily.sans,
-                    fontSize: 38,
-                    fontWeight: isActive ? 700 : 400,
-                    color: isActive
-                      ? colors.textHighlight
-                      : colors.textPrimary,
+                    fontSize,
+                    fontWeight: isActive ? 700 : isPast ? 400 : 500,
+                    color: textColor,
                     margin: 0,
                     lineHeight: 1.5,
                   }}

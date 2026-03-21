@@ -1,0 +1,228 @@
+{
+  "meta": {
+    "title": "MSA: Memory Sparse Attention",
+    "authors": ["EverMind AI"],
+    "durationEstimateSeconds": 540,
+    "language": "zh-CN",
+    "style": "tech_explainer"
+  },
+  "scenes": [
+    {
+      "id": "s01_title",
+      "type": "title",
+      "narration": "今天我们来深度解读一篇重磅论文：Memory Sparse Attention，简称 MSA。它来自 EverMind AI，让大语言模型的上下文窗口扩展到一亿个 token，精度衰减不到百分之九。这不是理论推演，而是在两张 A800 上跑通了的工程方案。",
+      "durationHint": 15,
+      "transition": { "type": "fade", "durationSeconds": 0.5 },
+      "audio": null,
+      "notes": "",
+      "visual": {
+        "title": "Memory Sparse Attention",
+        "subtitle": "端到端可训练 · 100M Token · <9% 精度衰减",
+        "authors": ["EverMind AI"],
+        "background": "gradient_dark"
+      }
+    },
+    {
+      "id": "s02_problem",
+      "type": "bullet",
+      "narration": "先搞清楚问题。现在的大模型上下文窗口最多一百二十八 K 到一百万 token。Full Attention 是 O(n²) 复杂度，内存和计算都扛不住。现有方案各有硬伤：线性注意力精度掉得厉害，RNN 变体不可微，RAG 需要复杂管线而且检索和生成是割裂的。MSA 要做的事就一件：把检索和生成合并成一个端到端可微分的注意力层。",
+      "durationHint": 25,
+      "transition": { "type": "fade", "durationSeconds": 0.5 },
+      "audio": null,
+      "notes": "",
+      "visual": {
+        "heading": "核心问题：长上下文的三重困境",
+        "points": [
+          "Full Attention O(n²) 复杂度 → 128K-1M 是天花板",
+          "线性注意力/RNN 变体 → 精度快速衰减",
+          "RAG 外部检索 → 管线复杂、不可微、检索与生成割裂",
+          "MSA 目标：端到端可微分 + 1亿 token + 近线性复杂度"
+        ]
+      }
+    },
+    {
+      "id": "s03_scaling_curve",
+      "type": "figure",
+      "narration": "看论文最关键的这张图。横轴是上下文长度，从一万六千到一亿 token。纵轴是问答质量分数。绿色的 MSA 曲线几乎是一条水平线，从头到尾衰减不到百分之九。而其他方案的曲线要么早早断掉，要么急剧下降。这张图一句话总结：MSA 是唯一能稳定扩展到一亿 token 的方案。",
+      "durationHint": 25,
+      "transition": { "type": "fade", "durationSeconds": 0.5 },
+      "audio": null,
+      "notes": "",
+      "visual": {
+        "src": "assets/figures/fig1_scaling.png",
+        "caption": "Figure 1: 16K → 100M token 扩展曲线",
+        "zoomRegion": null,
+        "annotations": [
+          { "x": 0.7, "y": 0.3, "text": "MSA < 9% 衰减", "color": "#10b981" }
+        ]
+      }
+    },
+    {
+      "id": "s04_architecture_flow",
+      "type": "flowchart",
+      "narration": "MSA 的整体架构分三个阶段。第一阶段是离线的全局记忆编码：把文档语料跑一遍前向传播，用 Chunk-Mean Pooling 压缩每个文档的 KV 缓存。第二阶段是在线路由：用户查询进来后，路由器计算查询和每个压缩文档的相关性分数，选出 Top-k 个最相关的。第三阶段是稀疏生成：只用选中的 KV 加上本地上下文做自回归生成。",
+      "durationHint": 30,
+      "transition": { "type": "fade", "durationSeconds": 0.5 },
+      "audio": null,
+      "notes": "",
+      "visual": {
+        "nodes": [
+          { "id": "corpus", "label": "文档语料", "type": "io" },
+          { "id": "encode", "label": "离线编码\n(前向传播)", "type": "process" },
+          { "id": "compress", "label": "Chunk-Mean\nPooling", "type": "process" },
+          { "id": "kv_cache", "label": "压缩 KV 缓存\n(K̄, V̄, K̄ᵣ)", "type": "io" },
+          { "id": "query", "label": "用户查询", "type": "io" },
+          { "id": "router", "label": "在线路由\n(Qᵣ · K̄ᵣ)", "type": "process" },
+          { "id": "topk", "label": "Top-k 选择", "type": "decision" },
+          { "id": "assemble", "label": "上下文拼接\n(K̄_topk + K_local)", "type": "process" },
+          { "id": "generate", "label": "稀疏生成", "type": "start_end" }
+        ],
+        "edges": [
+          { "from": "corpus", "to": "encode", "label": "" },
+          { "from": "encode", "to": "compress", "label": "" },
+          { "from": "compress", "to": "kv_cache", "label": "" },
+          { "from": "query", "to": "router", "label": "" },
+          { "from": "kv_cache", "to": "router", "label": "K̄ᵣ" },
+          { "from": "router", "to": "topk", "label": "scores" },
+          { "from": "topk", "to": "assemble", "label": "" },
+          { "from": "kv_cache", "to": "assemble", "label": "K̄, V̄" },
+          { "from": "assemble", "to": "generate", "label": "" }
+        ],
+        "revealOrder": ["corpus", "encode", "compress", "kv_cache", "query", "router", "topk", "assemble", "generate"]
+      }
+    },
+    {
+      "id": "s05_msa_layer",
+      "type": "figure",
+      "narration": "来看 MSA 注意力层的细节。每个文档独立编码，位置从零开始。路由器用低维投影计算相关性，选出 Top-k 后把它们的压缩 KV 和本地 KV 拼在一起。注意这里有两种 RoPE：Parallel RoPE 给每个文档独立编位，Global RoPE 只用在查询的活跃上下文上。这个设计让模型在六万四千 token 上训练就能外推到一亿。",
+      "durationHint": 30,
+      "transition": { "type": "fade", "durationSeconds": 0.5 },
+      "audio": null,
+      "notes": "",
+      "visual": {
+        "src": "assets/figures/fig2_msa_layer.png",
+        "caption": "Figure 2: MSA 注意力层 + Parallel/Global RoPE",
+        "zoomRegion": null,
+        "annotations": []
+      }
+    },
+    {
+      "id": "s06_formula",
+      "type": "formula_derive",
+      "narration": "来看核心公式。路由分数的计算分三步。第一步，查询的路由向量和每个文档的路由键做点积。第二步，对 attention head 维度取均值，再对 token 维度取最大值，得到每个文档的路由分数。第三步，取 Top-k 个分数最高的文档索引。最后把选中文档的压缩 KV 和本地 KV 拼接起来，作为生成的上下文。",
+      "durationHint": 30,
+      "transition": { "type": "fade", "durationSeconds": 0.5 },
+      "audio": null,
+      "notes": "",
+      "visual": {
+        "steps": [
+          { "latex": "\\text{Score}_{raw} = Q_r \\cdot K_{r,i}^T", "label": "Query-Key 点积" },
+          { "latex": "S_i = \\max_t \\text{mean}_h(\\text{Score}_{raw})", "label": "Head 均值 + Token 最大值" },
+          { "latex": "\\text{Top-k}: \\{i \\mid S_i \\geq S_{(k)}\\}", "label": "Top-k 筛选" },
+          { "latex": "\\text{Context} = \\text{Concat}(\\bar{K}_{\\text{top-k}}, K_{\\text{local}})", "label": "上下文拼接" }
+        ],
+        "direction": "forward"
+      }
+    },
+    {
+      "id": "s07_algorithm",
+      "type": "algorithm",
+      "narration": "把刚才的公式翻译成算法步骤。MSA Router 函数接收查询 Q 和压缩后的 K。先做 einsum 计算路由分数矩阵，然后对 head 维度取均值、对 token 维度取最大值，得到每个文档的分数。接着 argsort 取 Top-k 索引。最后 gather 选中文档的 KV，和本地 KV 拼接返回。整个过程是可微分的，可以端到端训练。",
+      "durationHint": 30,
+      "transition": { "type": "fade", "durationSeconds": 0.5 },
+      "audio": null,
+      "notes": "",
+      "visual": {
+        "title": "MSA Router Algorithm",
+        "pseudocode": "function MSA_Router(Q, K_compressed, k):\n    scores = einsum('bhqd,bkd->bhqk', Q_r, K_r)\n    scores = mean(scores, dim=heads)\n    scores = max(scores, dim=tokens)\n    top_k_idx = argsort(scores)[:k]\n    selected_kv = gather(KV_compressed, top_k_idx)\n    context = concat(selected_kv, local_kv)\n    return context",
+        "highlightSteps": [1, 2, 3, 4]
+      }
+    },
+    {
+      "id": "s08_inference",
+      "type": "figure",
+      "narration": "推理阶段的三步流程。第一步离线编码：全量文档跑一遍前向传播，缓存压缩后的 KV。路由键常驻 GPU 显存，内容 KV 放在 CPU 内存。第二步在线路由：查询广播到多 GPU，每张卡本地打分，全局归约取 Top-k。第三步按需加载：只把选中文档的 KV 从 CPU 异步搬到 GPU，拼接后做稀疏生成。这种分层存储设计让两张 A800 就能跑一亿 token。",
+      "durationHint": 35,
+      "transition": { "type": "fade", "durationSeconds": 0.5 },
+      "audio": null,
+      "notes": "",
+      "visual": {
+        "src": "assets/figures/fig3_inference.png",
+        "caption": "Figure 3: 三阶段推理 + Memory Interleave",
+        "zoomRegion": null,
+        "annotations": []
+      }
+    },
+    {
+      "id": "s09_results",
+      "type": "compare",
+      "narration": "来看实验结果。在九个长上下文问答数据集上，MSA 平均分三点七六，比标准 RAG 高百分之十六，比 RAG 加重排高百分之十一点五，比 HippoRAG2 高百分之十四点八。更重要的是，MSA 用的是四十亿参数的 Qwen3-4B 做 backbone，却在平均分上打赢了用两千三百五十亿参数 Qwen3-235B 的 RAG 方案。小模型加端到端记忆，比大模型加检索管线更强。",
+      "durationHint": 30,
+      "transition": { "type": "fade", "durationSeconds": 0.5 },
+      "audio": null,
+      "notes": "",
+      "visual": {
+        "headers": ["方法", "Backbone", "平均分", "vs MSA"],
+        "rows": [
+          ["Standard RAG @best", "Qwen3-4B", "3.242", "-13.8%"],
+          ["RAG + Rerank @best", "Qwen3-4B", "3.372", "-10.3%"],
+          ["HippoRAG2 @best", "Qwen3-4B", "3.275", "-12.9%"],
+          ["KaLMv2 + Rerank", "Qwen3-235B", "3.580", "-4.7%"],
+          ["KaLMv2 + Rerank", "Llama-3.3-70B", "3.568", "-5.1%"],
+          ["MSA (adaptive)", "Qwen3-4B", "3.760", "—"]
+        ],
+        "highlightRow": 5
+      }
+    },
+    {
+      "id": "s10_niah",
+      "type": "figure",
+      "narration": "在 RULER 大海捞针测试上，MSA 在一百万 token 时仍然保持百分之九十四点八四的准确率。原始 backbone 超过十二万八千 token 就崩了，掉到百分之二十四。混合线性注意力模型在二十五万六千之后也开始明显下降。MSA 是图中最稳的那条线。",
+      "durationHint": 20,
+      "transition": { "type": "fade", "durationSeconds": 0.5 },
+      "audio": null,
+      "notes": "",
+      "visual": {
+        "src": "assets/figures/fig4_ruler_niah.png",
+        "caption": "Figure 4: RULER NIAH 准确率 (32K → 1M)",
+        "zoomRegion": null,
+        "annotations": [
+          { "x": 0.8, "y": 0.2, "text": "MSA: 94.84% @1M", "color": "#10b981" }
+        ]
+      }
+    },
+    {
+      "id": "s11_training",
+      "type": "figure",
+      "narration": "训练效率方面。MSA 用了一千五百八十九亿 token 做持续预训练，加上两阶段的 SFT 微调，从八千 token 逐步扩展到六万四千。消融实验显示，课程学习扩展、Memory Interleave、持续预训练这几个组件缺一不可，移除任何一个都会导致百分之五到百分之三十七的性能下降。",
+      "durationHint": 25,
+      "transition": { "type": "fade", "durationSeconds": 0.5 },
+      "audio": null,
+      "notes": "",
+      "visual": {
+        "src": "assets/figures/training_time_vs_context_length_updated.png",
+        "caption": "训练时间 vs 上下文长度对比",
+        "zoomRegion": null,
+        "annotations": []
+      }
+    },
+    {
+      "id": "s12_summary",
+      "type": "summary",
+      "narration": "总结一下。MSA 这篇论文最大的价值在于，它证明了端到端可训练的稀疏记忆可以实用化地扩展到一亿 token。不需要外部检索管线，不需要复杂的 Agent 编排，一个统一的注意力层就能搞定检索和生成。四十亿参数的小模型加上 MSA，比两千多亿参数的大模型加 RAG 还强。这给长上下文的未来指了一条可能更优的路。",
+      "durationHint": 25,
+      "transition": { "type": "fade", "durationSeconds": 0.5 },
+      "audio": null,
+      "notes": "",
+      "visual": {
+        "keyNumbers": [
+          { "value": "100M", "label": "最大上下文长度" },
+          { "value": "<9%", "label": "精度衰减" },
+          { "value": "2×A800", "label": "推理硬件" },
+          { "value": "94.84%", "label": "NIAH @1M 准确率" }
+        ],
+        "takeaway": "端到端可训练的稀疏记忆 > 大模型 + RAG 管线"
+      }
+    }
+  ]
+}
